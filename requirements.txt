@@ -1,0 +1,6 @@
+twisted ~= 16.6.0
+klein ~= 16.12.0
+coloredlogs ~= 5.2
+leveldb ~= 0.194
+uuid ~= 1.30
+service_identity ~= 16.0.0
