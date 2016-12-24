@@ -12,7 +12,7 @@ setup(name='cvmchain',
 	author='Davide Gessa',
 	setup_requires='setuptools',
 	author_email='gessadavide@gmail.com',
-	packages=['cvmchain', 'cvmchain.network'],
+	packages=['cvmchain', 'cvmchain.network', 'cvmchain.chain'],
 	entry_points={
 		'console_scripts': [
 			'cvmchain=cvmchain.cvmchain:main',
