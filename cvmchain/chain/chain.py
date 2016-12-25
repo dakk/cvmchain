@@ -14,4 +14,16 @@ class Chain:
 		logger.info ('Shutdown completed')
 
 	def getHeight (self):
-		return 0
+		return self.db.get ()['blocks'].count () + 1
+
+	def getBlocks (self, istart, iend):
+		return []
+
+	def getTransactions (self):
+		return []
+
+	def pushBlocks (self, blocks):
+		pass
+
+	def pushTransactions (self, transactions):
+		pass

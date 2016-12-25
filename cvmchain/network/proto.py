@@ -1,37 +1,17 @@
+import random
 import json
-from twisted.internet import protocol, threads
+import datetime
+from .. import config
+from twisted.internet import protocol, threads, task
 
 import logging
 import coloredlogs
 logger = logging.getLogger ('proto')
 coloredlogs.install (level='DEBUG')
 
-"""
-All chain calls that read or write from disk, should be run in another thread with:
-
-from twisted.internet import reactor, threads
-
-def doLongCalculation():
-    # .... do long calculation here ...
-    return 3
-
-def printResult(x):
-    print x
-
-# run method in thread and get result as defer.Deferred
-d = threads.deferToThread(doLongCalculation)
-d.addCallback(printResult)
-reactor.run()
-
-http://twistedmatrix.com/documents/11.0.0/core/howto/threading.html
-
-Thread safety will be implemented in chain with locks
-"""
-
 class Proto (protocol.Protocol):
 	def __init__ (self, factory):
 		self.factory = factory
-		self.nodeid = self.factory.nodeid
 		self.messageHandlers = {
 			'hello': self.hello,
 			'ping': self.ping,
@@ -51,36 +31,61 @@ class Proto (protocol.Protocol):
 		}
 
 	def dataReceived (self, data):
-		logger.debug ('Data received: %s', data)
+		#logger.debug ('Data received: %s', data)
 		data = data.decode()
 
 		for line in data.splitlines ():
 			line = line.strip ()
-			m = json.loads (line)
+			try:
+				m = json.loads (line)
+			except:
+				logger.error ('Unparsable message')
+				continue
 
 			if m['type'] in self.messageHandlers:
-				logger.debug ('New message: %s', m['type'])
-				self.messageHandlers [m['type']] (data)
+				self.factory.peers [self.remoteIp]['lastmessage'] = datetime.datetime.utcnow ()
+				logger.info ('New message: %s', m['type'])
+				self.messageHandlers [m['type']] (m)
 			else:
 				logger.warning ('Unhandled message: %s', m['type'])
 
 	def sendData (self, m):
-		logger.debug ('Send data: %s', str (m))
+		logger.debug ('Send message: %s', str (m['type']))
 		data = json.dumps (m)
 		self.transport.write (bytes (data.encode ()) + b'\n')
 
-	def connectionMade(self):
-		remote_ip = self.transport.getPeer()
-		host_ip = self.transport.getHost()
-		self.remote_ip = remote_ip.host + ":" + str (remote_ip.port)
-		self.host_ip = host_ip.host + ":" + str (host_ip.port)
-		logger.debug ("Connection from %s", self.transport.getPeer())
+	def connectionMade (self):
+		remote = self.transport.getPeer()
+		host = self.transport.getHost()
+		self.remoteIp = remote.host + ":" + str (remote.port)
+		self.hostIp = host.host + ":" + str (host.port)
+
+		self.factory.peers [self.remoteIp] = {
+			'connected': True,
+			'height': None,
+			'software': None,
+			'version': None,
+			'lastmessage': datetime.datetime.utcnow ()
+		}
+
+		logger.info ("Connection from %s", self.transport.getPeer())
+		self.sendHello (config.APP_NAME, config.APP_VERSION, config.CONF['chain'])
+
+		self.timer = task.LoopingCall (lambda: self.timerLoop ())
+		self.timer.start (1.0)
+
+	def timerLoop (self):
+		diff = datetime.datetime.utcnow () - self.factory.peers [self.remoteIp]['lastmessage']
+
+		if diff > datetime.timedelta (seconds=random.randint (45,75)): 
+			self.sendPing ()
+		if diff > datetime.timedelta (seconds=random.randint (5,10)): 
+			self.sendGetHeight ()
 
 	def connectionLost(self, reason):
-		#if self.remote_nodeid in self.factory.peers:
-		#	self.factory.peers.pop(self.remote_nodeid)
-		#	self.lc_ping.stop()
-		logger.debug ("Disconnected")
+		self.timer.stop ()
+		self.factory.peers [self.remoteIp]['connected'] = False
+		logger.info ("Disconnected")
 			
 
 	###################
@@ -96,6 +101,10 @@ class Proto (protocol.Protocol):
 
 	# Send the hello message
 	def hello (self, m):
+		self.factory.peers [self.remoteIp]['software'] = m['software']
+		self.factory.peers [self.remoteIp]['version'] = m['version']
+
+		self.sendGetHeight ()
 		self.sendPing ()
 
 	# Get the list of all connected peers
@@ -107,10 +116,11 @@ class Proto (protocol.Protocol):
 		pass
 
 	def getHeight (self, m):
-		self.sendHeight (self.factory.chain.getHeight ())
+		d = threads.deferToThread (self.factory.chain.getHeight)
+		d.addCallback (lambda height: self.sendHeight (height))
 
 	def height (self, m):
-		pass
+		self.factory.peers [self.remoteIp]['height'] = m['height']
 
 	def getBlocks (self, m):
 		pass
@@ -127,8 +137,8 @@ class Proto (protocol.Protocol):
 
 	###################
 	# Message factory
-	def sendHello (self, software, version, chain, height):
-		self.sendData ({'type': 'hello', 'software': software, 'version': version, 'chain': chain, 'height': height})
+	def sendHello (self, software, version, chain):
+		self.sendData ({'type': 'hello', 'software': software, 'version': version, 'chain': chain})
 
 	def sendPing (self):
 		self.sendData ({'type': 'ping'})

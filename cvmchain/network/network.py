@@ -12,33 +12,32 @@ import coloredlogs
 logger = logging.getLogger ('network')
 coloredlogs.install (level='DEBUG')
 
+from twisted.python import log
+observer = log.PythonLoggingObserver()
+observer.start()
+
 
 class Factory (protocol.Factory):
-	def __init__ (self):
+	def __init__ (self, chain):
+		self.chain = chain
 		self.peers = {}
-		self.nodeid = uuid4 ()
 
 	def buildProtocol (self, addr):
 		return Proto (self)
-
-
-def gotPeer (p):
-	logger.debug ('Peer connected: %s', str (p))
-	p.sendHello (config.APP_NAME, config.APP_VERSION, 0, 0)
 
 
 class Network:
 	def __init__ (self, db, chain):
 		self.db = db
 		self.chain = chain
-		self.factory = Factory ()
+		self.factory = Factory (self.chain)
 		self.endpoint = TCP4ServerEndpoint (reactor, config.CONF['port'])
 		self.endpoint.listen (self.factory)
 
 	def connect (self, host, port):
 		point = TCP4ClientEndpoint(reactor, host, port)
 		d = connectProtocol(point, Proto (self.factory))
-		d.addCallback (gotPeer)
+		d.addCallback (lambda p: logger.info ('Peer connected: %s', str (p)))
 
 	def loop (self):
 		reactor.run (False)
