@@ -1,12 +1,17 @@
 import sys
+import time
 from uuid import uuid4
 from twisted.internet import reactor, protocol
-from twisted.python import log
 from twisted.internet.endpoints import TCP4ServerEndpoint, TCP4ClientEndpoint, connectProtocol
 
 from .proto import Proto
+from .. import config
 
-#log.startLogging (sys.stdout)
+import logging
+import coloredlogs
+logger = logging.getLogger ('network')
+coloredlogs.install (level='DEBUG')
+
 
 class Factory (protocol.Factory):
 	def __init__ (self):
@@ -18,8 +23,8 @@ class Factory (protocol.Factory):
 
 
 def gotPeer (p):
-	print ('Got peer', p)
-	p.sendHello (0, 0, 0, 0)
+	logger.debug ('Peer connected: %s', str (p))
+	p.sendHello (config.APP_NAME, config.APP_VERSION, 0, 0)
 
 
 class Network:

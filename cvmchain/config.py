@@ -41,11 +41,18 @@ CONF = {
 	'chain': 'testnet',
 	'port': 6787,
 
-	'nodes': [
-		{ 'host': 'localhost', 'port': 3030, 'ssl': False }
-	],
-
 	'api': {
 		'port': 8080
-	}
+	},
+
+	'db': {
+		'host': 'localhost',
+		'port': 27017,
+		'credentials': '',
+		'database': "cvmchain"
+	},
+
+	'nodes': [
+		{ 'host': 'localhost', 'port': 3030, 'ssl': False }
+	]
 }

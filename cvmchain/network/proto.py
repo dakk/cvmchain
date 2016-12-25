@@ -1,6 +1,32 @@
 import json
-from twisted.internet import protocol
+from twisted.internet import protocol, threads
 
+import logging
+import coloredlogs
+logger = logging.getLogger ('proto')
+coloredlogs.install (level='DEBUG')
+
+"""
+All chain calls that read or write from disk, should be run in another thread with:
+
+from twisted.internet import reactor, threads
+
+def doLongCalculation():
+    # .... do long calculation here ...
+    return 3
+
+def printResult(x):
+    print x
+
+# run method in thread and get result as defer.Deferred
+d = threads.deferToThread(doLongCalculation)
+d.addCallback(printResult)
+reactor.run()
+
+http://twistedmatrix.com/documents/11.0.0/core/howto/threading.html
+
+Thread safety will be implemented in chain with locks
+"""
 
 class Proto (protocol.Protocol):
 	def __init__ (self, factory):
@@ -25,6 +51,7 @@ class Proto (protocol.Protocol):
 		}
 
 	def dataReceived (self, data):
+		logger.debug ('Data received: %s', data)
 		data = data.decode()
 
 		for line in data.splitlines ():
@@ -32,12 +59,13 @@ class Proto (protocol.Protocol):
 			m = json.loads (line)
 
 			if m['type'] in self.messageHandlers:
-				print ('New message:', m['type'])
+				logger.debug ('New message: %s', m['type'])
 				self.messageHandlers [m['type']] (data)
 			else:
-				print ('Unhandled message:', m['type'])
+				logger.warning ('Unhandled message: %s', m['type'])
 
 	def sendData (self, m):
+		logger.debug ('Send data: %s', str (m))
 		data = json.dumps (m)
 		self.transport.write (bytes (data.encode ()) + b'\n')
 
@@ -46,13 +74,13 @@ class Proto (protocol.Protocol):
 		host_ip = self.transport.getHost()
 		self.remote_ip = remote_ip.host + ":" + str (remote_ip.port)
 		self.host_ip = host_ip.host + ":" + str (host_ip.port)
-		print ("Connection from", self.transport.getPeer())
+		logger.debug ("Connection from %s", self.transport.getPeer())
 
 	def connectionLost(self, reason):
 		#if self.remote_nodeid in self.factory.peers:
 		#	self.factory.peers.pop(self.remote_nodeid)
 		#	self.lc_ping.stop()
-		print (self.nodeid, "disconnected")
+		logger.debug ("Disconnected")
 			
 
 	###################
@@ -120,14 +148,14 @@ class Proto (protocol.Protocol):
 	def sendHeight (self, height):
 		self.sendData ({'type': 'height', 'height': height})
 
-	def sendGetBlocks (self, blast):
-		pass
+	def sendGetBlocks (self, last):
+		self.sendData ({'type': 'getBlocks', 'last': last})
 
 	def sendBlocks (self, blocks):
 		self.sendData ({'type': 'blocks', 'blocks': blocks})
 
 	def sendGetTransactions (self):
-		pass
+		self.sendData ({'type': 'getTransactions'})
 
 	def sendTransactions (self, transactions):
 		self.sendData ({'type': 'transactions', 'transactions': transactions})
