@@ -28,10 +28,11 @@ def gotPeer (p):
 
 
 class Network:
-	def __init__ (self, port, chain):
+	def __init__ (self, db, chain):
+		self.db = db
 		self.chain = chain
 		self.factory = Factory ()
-		self.endpoint = TCP4ServerEndpoint (reactor, port)
+		self.endpoint = TCP4ServerEndpoint (reactor, config.CONF['port'])
 		self.endpoint.listen (self.factory)
 
 	def connect (self, host, port):
@@ -41,3 +42,7 @@ class Network:
 
 	def loop (self):
 		reactor.run (False)
+
+	def shutdown (self):
+		reactor.stop()
+		logger.info ('Shutdown completed')

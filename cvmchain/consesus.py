@@ -1,10 +1,15 @@
-GENESIS = {
-    "hash": "",
-    "block": ""
+genesis = {
+    'testnet': {
+        'hash': '',
+        'block': ''
+    },
+    'mainnet': {
+        'hash': '',
+        'block': ''
+    }
 }
 
-
-DELEGATES = 101
+delegates = 101
 
 def score (votes):
     score = 1.0

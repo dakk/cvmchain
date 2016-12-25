@@ -1,5 +1,5 @@
-import time
 from pymongo import MongoClient
+from .. import config
 
 import logging
 import coloredlogs
@@ -7,14 +7,11 @@ logger = logging.getLogger ('chain')
 coloredlogs.install (level='DEBUG')
 
 class Chain:
-    def __init__ (self):
-        self.client = MongoClient ('localhost', 27017)
-        self.db = self.client ['cvmchain']
-        logger.info ('Connected to mongodb')
+	def __init__ (self, db):
+		self.db = db
 
-    # Close all leveldb databases
-    def shutdown (self):
-        pass
+	def shutdown (self):
+		logger.info ('Shutdown completed')
 
-    def getHeight (self):
-        return 0
+	def getHeight (self):
+		return 0

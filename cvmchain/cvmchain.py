@@ -1,15 +1,25 @@
 import sys
 import os
 import json
+import signal
 
 from .network import *
 from .chain import *
-from . import config
+from . import config, database
 
 import logging
 import coloredlogs
 logger = logging.getLogger ('main')
 coloredlogs.install (level='DEBUG')
+
+
+def signal_handler (sig, frame):
+	global network, db, chain
+	logger.info ('Exiting...')
+	network.shutdown ()
+	chain.shutdown ()
+	db.shutdown ()
+
 
 def main ():
 	logger.info ('%s %s', config.APP_NAME, config.APP_VERSION)
@@ -47,9 +57,16 @@ def main ():
 	logger.info ('Configuration file %s loaded', config.DATA_DIR+'/'+config.APP_NAME+'.json')
 
 
-	# Start the network
-	chain = Chain ()
-	network = Network (8556, chain)
+	# Bind signals
+	signal.signal(signal.SIGINT, signal_handler)
+	signal.signal(signal.SIGQUIT, signal_handler)
+
+	# Start the mainloop
+	global network, db, chain
+
+	db = database.Database ()
+	chain = Chain (db)
+	network = Network (db, chain)
 	network.connect ('127.0.0.1', 8556)
 		
 	network.loop ()
