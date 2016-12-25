@@ -44,8 +44,8 @@ class Proto (protocol.Protocol):
 	def connectionMade(self):
 		remote_ip = self.transport.getPeer()
 		host_ip = self.transport.getHost()
-		self.remote_ip = remote_ip.host + ":" + str(remote_ip.port)
-		self.host_ip = host_ip.host + ":" + str(host_ip.port)
+		self.remote_ip = remote_ip.host + ":" + str (remote_ip.port)
+		self.host_ip = host_ip.host + ":" + str (host_ip.port)
 		print ("Connection from", self.transport.getPeer())
 
 	def connectionLost(self, reason):
@@ -79,7 +79,7 @@ class Proto (protocol.Protocol):
 		pass
 
 	def getHeight (self, m):
-		pass
+		self.sendHeight (self.factory.chain.getHeight ())
 
 	def height (self, m):
 		pass
@@ -99,9 +99,8 @@ class Proto (protocol.Protocol):
 
 	###################
 	# Message factory
-	def sendHello (self, sname, sversion, chain, height):
-		print ('Sending hello...')
-		self.sendData ({'type': 'hello'})
+	def sendHello (self, software, version, chain, height):
+		self.sendData ({'type': 'hello', 'software': software, 'version': version, 'chain': chain, 'height': height})
 
 	def sendPing (self):
 		self.sendData ({'type': 'ping'})
@@ -110,25 +109,25 @@ class Proto (protocol.Protocol):
 		self.sendData ({'type': 'pong'})
 
 	def sendGetPeers (self):
-		pass
+		self.sendData ({'type': 'getPeers'})
 
 	def sendPeers (self, peers):
-		pass
+		self.sendData ({'type': 'height', 'peers': peers})
 
 	def sendGetHeight (self):
-		pass
+		self.sendData ({'type': 'getHeight'})
 
 	def sendHeight (self, height):
-		pass
+		self.sendData ({'type': 'height', 'height': height})
 
 	def sendGetBlocks (self, blast):
 		pass
 
 	def sendBlocks (self, blocks):
-		pass
+		self.sendData ({'type': 'blocks', 'blocks': blocks})
 
 	def sendGetTransactions (self):
 		pass
 
 	def sendTransactions (self, transactions):
-		pass
+		self.sendData ({'type': 'transactions', 'transactions': transactions})

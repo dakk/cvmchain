@@ -9,9 +9,9 @@ from cvmchain import config
 setup(name='cvmchain',
 	version=config.APP_VERSION,
 	description='',
-	author='Davide Gessa',
+	author=conf.AUTHOR,
 	setup_requires='setuptools',
-	author_email='gessadavide@gmail.com',
+	author_email=conf.AUTHOR_EMAIL,
 	packages=['cvmchain', 'cvmchain.network', 'cvmchain.chain'],
 	entry_points={
 		'console_scripts': [

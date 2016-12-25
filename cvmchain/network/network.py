@@ -1,13 +1,15 @@
 import sys
 from uuid import uuid4
-from twisted.python import log
 from twisted.internet import reactor, protocol
+from twisted.python import log
 from twisted.internet.endpoints import TCP4ServerEndpoint, TCP4ClientEndpoint, connectProtocol
 
 from .proto import Proto
 
+#log.startLogging (sys.stdout)
+
 class Factory (protocol.Factory):
-	def startFactory (self):
+	def __init__ (self):
 		self.peers = {}
 		self.nodeid = uuid4 ()
 
@@ -21,17 +23,16 @@ def gotPeer (p):
 
 
 class Network:
-	def start (self, port):
-		log.startLogging (sys.stdout)
-		endpoint = TCP4ServerEndpoint (reactor, port)
-		endpoint.listen (Factory ())
+	def __init__ (self, port, chain):
+		self.chain = chain
+		self.factory = Factory ()
+		self.endpoint = TCP4ServerEndpoint (reactor, port)
+		self.endpoint.listen (self.factory)
 
 	def connect (self, host, port):
 		point = TCP4ClientEndpoint(reactor, host, port)
-		f = Factory ()
-		f.startFactory ()
-		d = connectProtocol(point, Proto (f))
+		d = connectProtocol(point, Proto (self.factory))
 		d.addCallback (gotPeer)
 
 	def loop (self):
-		reactor.run ()
+		reactor.run (False)
