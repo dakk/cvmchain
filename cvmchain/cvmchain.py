@@ -67,6 +67,6 @@ def main ():
 	db = database.Database ()
 	chain = Chain (db)
 	network = Network (db, chain)
-	network.connect ('127.0.0.1', 6797)
+	network.connect ('127.0.0.1', 6187)
 		
 	network.loop ()

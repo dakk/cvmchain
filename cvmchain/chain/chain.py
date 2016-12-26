@@ -13,11 +13,12 @@ class Chain:
 	def shutdown (self):
 		logger.info ('Shutdown completed')
 
+	# Should be get last block?
 	def getHeight (self):
-		return self.db.get ()['blocks'].count () + 1
+		return self.db.get ()['blocks'].count () + 1, '0x001'
 
-	def getBlocks (self, istart, iend):
-		return []
+	def getBlocks (self, last = None, first = None, hash = None, n = 16):
+		return [], ''
 
 	def getTransactions (self):
 		return []

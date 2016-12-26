@@ -60,7 +60,11 @@ class Proto (protocol.Protocol):
 		self.remoteIp = remote.host + ":" + str (remote.port)
 		self.hostIp = host.host + ":" + str (host.port)
 
+		print (self.remoteIp, self.hostIp)
+
 		self.factory.peers [self.remoteIp] = {
+			'host': remote.host,
+			'port': remote.port,
 			'connected': True,
 			'height': None,
 			'software': None,
@@ -81,7 +85,10 @@ class Proto (protocol.Protocol):
 			self.sendPing ()
 		if diff > datetime.timedelta (seconds=random.randint (5,10)): 
 			self.sendGetHeight ()
-
+		if diff > datetime.timedelta (minutes=15):
+			# Disconnect the node
+			pass 
+			
 	def connectionLost(self, reason):
 		self.timer.stop ()
 		self.factory.peers [self.remoteIp]['connected'] = False
@@ -106,33 +113,49 @@ class Proto (protocol.Protocol):
 
 		self.sendGetHeight ()
 		self.sendPing ()
+		self.sendGetPeers ()
 
 	# Get the list of all connected peers
 	def getPeers (self, m):
-		pass
+		l = []
+		for x in self.factory.peers:
+			if self.factory.peers [x]['connected'] and (self.factory.peers[x]['host'] + ':' + str(self.factory.peers[x]['port'])) != self.hostIp: 
+				l.append ({ 'host': self.factory.peers [x]['host'], 'port': self.factory.peers [x]['port'] })
+		self.sendPeers (l)
 
 	# List of peers
 	def peers (self, m):
-		pass
+		print (m)
+		# Perform a bootstrap
+		for peer in m['peers']:
+			if (peer['host'] + ':' + str(peer['port'])) != self.hostIp and not (peer['host'] + ':' + str (peer['port'])) in self.factory.peers: 
+				self.factory.connect (peer['host'], peer['port'])
 
 	def getHeight (self, m):
 		d = threads.deferToThread (self.factory.chain.getHeight)
-		d.addCallback (lambda height: self.sendHeight (height))
+		d.addCallback (lambda res: self.sendHeight (res[0], res[1]))
 
 	def height (self, m):
 		self.factory.peers [self.remoteIp]['height'] = m['height']
 
 	def getBlocks (self, m):
-		pass
+		if 'last' in m and 'n' in m:
+			d = threads.deferToThread (self.chain.getBlocks, last=m['last'], n=m['n'])
+		elif 'first' in m and 'n' in m:
+			d = threads.deferToThread (self.chain.getBlocks, first=m['first'], n=m['n'])
+		elif 'hash':
+			d = threads.deferToThread (self.chain.getBlocks, hash=m['hash'])
+		d.addCallback (lambda res: self.sendHeight (res[0], res[1]))
 
 	def blocks (self, m):
-		pass
+		threads.deferToThread (self.chain.pushBlocks, m['blocks'])
 
 	def getTransactions (self, m):
-		pass
+		d = threads.deferToThread (self.chain.getTransactions)
+		d.addCallback (lambda transactions: self.sendTransactions (transactions))
 
 	def transactions (self, m):
-		pass
+		threads.deferToThread (self.chain.pushTransactions, m['transactions'])
 
 
 	###################
@@ -150,19 +173,24 @@ class Proto (protocol.Protocol):
 		self.sendData ({'type': 'getPeers'})
 
 	def sendPeers (self, peers):
-		self.sendData ({'type': 'height', 'peers': peers})
+		self.sendData ({'type': 'peers', 'peers': peers})
 
 	def sendGetHeight (self):
 		self.sendData ({'type': 'getHeight'})
 
-	def sendHeight (self, height):
-		self.sendData ({'type': 'height', 'height': height})
+	def sendHeight (self, height, last):
+		self.sendData ({'type': 'height', 'height': height, 'last': last})
 
-	def sendGetBlocks (self, last):
-		self.sendData ({'type': 'getBlocks', 'last': last})
+	def sendGetBlocks (self, last = None, first = None, hash = None, n = 16):
+		if hash:
+			self.sendData ({'type': 'getBlocks', 'hash': last})
+		elif first and n:
+			self.sendData ({'type': 'getBlocks', 'first': first, 'n': n})
+		elif last and n:
+			self.sendData ({'type': 'getBlocks', 'last': first, 'n': n})
 
-	def sendBlocks (self, blocks):
-		self.sendData ({'type': 'blocks', 'blocks': blocks})
+	def sendBlocks (self, blocks, last):
+		self.sendData ({'type': 'blocks', 'blocks': blocks, 'last': last})
 
 	def sendGetTransactions (self):
 		self.sendData ({'type': 'getTransactions'})

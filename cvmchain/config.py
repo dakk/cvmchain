@@ -39,7 +39,7 @@ DATA_DIR = app_data_path (appname=APP_NAME)
 
 CONF = {
 	'chain': 'testnet',
-	'port': 6797,
+	'port': 6187,
 
 	'api': {
 		'port': 8080

@@ -24,6 +24,11 @@ class Factory (protocol.Factory):
 
 	def buildProtocol (self, addr):
 		return Proto (self)
+	
+	def connect (self, host, port):
+		point = TCP4ClientEndpoint(reactor, host, port)
+		d = connectProtocol(point, Proto (self))
+		d.addCallback (lambda p: logger.info ('Peer connected: %s', str (p)))
 
 
 class Network:
@@ -35,9 +40,7 @@ class Network:
 		self.endpoint.listen (self.factory)
 
 	def connect (self, host, port):
-		point = TCP4ClientEndpoint(reactor, host, port)
-		d = connectProtocol(point, Proto (self.factory))
-		d.addCallback (lambda p: logger.info ('Peer connected: %s', str (p)))
+		self.factory.connect (host, port)
 
 	def loop (self):
 		reactor.run (False)
