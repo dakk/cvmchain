@@ -34,8 +34,9 @@ def app_data_path (appname, roaming=True):
 	return path
 
 
-
+VERBOSE = 1
 DATA_DIR = app_data_path (appname=APP_NAME)
+CHAINS = ['mainnet', 'testnet']
 
 CONF = {
 	'chain': 'testnet',
