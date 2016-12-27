@@ -1,0 +1,100 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Universal Ctags Team	//
+!_TAG_PROGRAM_NAME	Universal Ctags	/Derived from Exuberant Ctags/
+!_TAG_PROGRAM_URL	https://ctags.io/	/official site/
+!_TAG_PROGRAM_VERSION	0.0.0	//
+APP_NAME	cvmchain/config.py	/^APP_NAME = 'cvmchain'$/;"	kind:variable	line:4
+APP_VERSION	cvmchain/config.py	/^APP_VERSION = 0.1$/;"	kind:variable	line:5
+AUTHOR	cvmchain/config.py	/^AUTHOR = 'Davide Gessa'$/;"	kind:variable	line:6
+AUTHOR_EMAIL	cvmchain/config.py	/^AUTHOR_EMAIL = 'gessadavide@gmail.com'$/;"	kind:variable	line:7
+Block	cvmchain/chain/block.py	/^class Block:$/;"	kind:class	line:1
+CHAINS	cvmchain/config.py	/^CHAINS = ['mainnet', 'testnet']$/;"	kind:variable	line:39
+CONF	cvmchain/config.py	/^CONF = {$/;"	kind:variable	line:41
+Chain	cvmchain/chain/chain.py	/^class Chain:$/;"	kind:class	line:9
+DATA_DIR	cvmchain/config.py	/^DATA_DIR = app_data_path (appname=APP_NAME)$/;"	kind:variable	line:38
+Database	cvmchain/database.py	/^class Database:$/;"	kind:class	line:9
+Factory	cvmchain/network/network.py	/^class Factory (protocol.Factory):$/;"	kind:class	line:20
+Network	cvmchain/network/network.py	/^class Network:$/;"	kind:class	line:34
+Proto	cvmchain/network/proto.py	/^class Proto (protocol.Protocol):$/;"	kind:class	line:12
+VERBOSE	cvmchain/config.py	/^VERBOSE = 1$/;"	kind:variable	line:37
+__init__	cvmchain/chain/chain.py	/^	def __init__ (self, db):$/;"	kind:member	line:10
+__init__	cvmchain/database.py	/^	def __init__ (self):$/;"	kind:member	line:10
+__init__	cvmchain/network/network.py	/^	def __init__ (self, chain):$/;"	kind:member	line:21
+__init__	cvmchain/network/network.py	/^	def __init__ (self, db, chain):$/;"	kind:member	line:35
+__init__	cvmchain/network/proto.py	/^	def __init__ (self, factory):$/;"	kind:member	line:13
+__init__.py	cvmchain/__init__.py	1;"	kind:file	line:1
+__init__.py	cvmchain/chain/__init__.py	1;"	kind:file	line:1
+__init__.py	cvmchain/network/__init__.py	1;"	kind:file	line:1
+api.py	cvmchain/network/api.py	1;"	kind:file	line:1
+app	cvmchain/network/api.py	/^app = Klein()$/;"	kind:variable	line:3
+app_data_path	cvmchain/config.py	/^def app_data_path (appname, roaming=True):$/;"	kind:function	line:9
+block.py	cvmchain/chain/block.py	1;"	kind:file	line:1
+blocks	cvmchain/network/proto.py	/^	def blocks (self, m):$/;"	kind:member	line:146
+buildProtocol	cvmchain/network/network.py	/^	def buildProtocol (self, addr):$/;"	kind:member	line:25
+chain.py	cvmchain/chain/chain.py	1;"	kind:file	line:1
+config.py	cvmchain/config.py	1;"	kind:file	line:1
+connect	cvmchain/network/network.py	/^	def connect (self, host, port):$/;"	kind:member	line:28
+connect	cvmchain/network/network.py	/^	def connect (self, host, port):$/;"	kind:member	line:49
+connectionLost	cvmchain/network/proto.py	/^	def connectionLost(self, reason):$/;"	kind:member	line:88
+connectionMade	cvmchain/network/proto.py	/^	def connectionMade (self):$/;"	kind:member	line:53
+consesus.py	cvmchain/consesus.py	1;"	kind:file	line:1
+cvmchain.py	cvmchain/cvmchain.py	1;"	kind:file	line:1
+dataReceived	cvmchain/network/proto.py	/^	def dataReceived (self, data):$/;"	kind:member	line:29
+database.py	cvmchain/database.py	1;"	kind:file	line:1
+delegates	cvmchain/consesus.py	/^delegates = 101$/;"	kind:variable	line:12
+genesis	cvmchain/consesus.py	/^genesis = {$/;"	kind:variable	line:1
+get	cvmchain/database.py	/^	def get (self, collection = None):$/;"	kind:member	line:15
+getBlock	cvmchain/network/api.py	/^    def getBlock (request):$/;"	kind:function	line:11
+getBlockByHash	cvmchain/network/api.py	/^    def getBlockByHash (request):$/;"	kind:function	line:17
+getBlockByHeight	cvmchain/network/api.py	/^    def getBlockByHeight (request):$/;"	kind:function	line:7
+getBlocks	cvmchain/chain/chain.py	/^	def getBlocks (self, last = None, first = None, hash = None, n = 16):$/;"	kind:member	line:20
+getBlocks	cvmchain/network/proto.py	/^	def getBlocks (self, m):$/;"	kind:member	line:137
+getHeight	cvmchain/chain/chain.py	/^	def getHeight (self):$/;"	kind:member	line:17
+getHeight	cvmchain/network/proto.py	/^	def getHeight (self, m):$/;"	kind:member	line:130
+getPeers	cvmchain/network/proto.py	/^	def getPeers (self, m):$/;"	kind:member	line:115
+getTransactions	cvmchain/chain/chain.py	/^	def getTransactions (self):$/;"	kind:member	line:23
+getTransactions	cvmchain/network/proto.py	/^	def getTransactions (self, m):$/;"	kind:member	line:149
+height	cvmchain/network/proto.py	/^	def height (self, m):$/;"	kind:member	line:134
+hello	cvmchain/network/proto.py	/^	def hello (self, m):$/;"	kind:member	line:106
+logger	cvmchain/chain/chain.py	/^logger = logging.getLogger ('chain')$/;"	kind:variable	line:6
+logger	cvmchain/cvmchain.py	/^logger = logging.getLogger ('main')$/;"	kind:variable	line:13
+logger	cvmchain/database.py	/^logger = logging.getLogger ('database')$/;"	kind:variable	line:6
+logger	cvmchain/network/network.py	/^logger = logging.getLogger ('network')$/;"	kind:variable	line:13
+logger	cvmchain/network/proto.py	/^logger = logging.getLogger ('proto')$/;"	kind:variable	line:9
+loop	cvmchain/network/network.py	/^	def loop (self):$/;"	kind:member	line:52
+main	cvmchain/cvmchain.py	/^def main ():$/;"	kind:function	line:39
+network.py	cvmchain/network/network.py	1;"	kind:file	line:1
+observer	cvmchain/network/network.py	/^observer = log.PythonLoggingObserver()$/;"	kind:variable	line:16
+parse	cvmchain/chain/block.py	/^    def parse (data):$/;"	kind:member	line:2
+peers	cvmchain/network/proto.py	/^	def peers (self, m):$/;"	kind:member	line:123
+ping	cvmchain/network/proto.py	/^	def ping (self, m):$/;"	kind:member	line:98
+pong	cvmchain/network/proto.py	/^	def pong (self, m):$/;"	kind:member	line:102
+proto.py	cvmchain/network/proto.py	1;"	kind:file	line:1
+pushBlocks	cvmchain/chain/chain.py	/^	def pushBlocks (self, blocks):$/;"	kind:member	line:26
+pushTransactions	cvmchain/chain/chain.py	/^	def pushTransactions (self, transactions):$/;"	kind:member	line:29
+requestBlocks	cvmchain/network/network.py	/^	def requestBlocks (self):$/;"	kind:member	line:43
+requestTransactions	cvmchain/network/network.py	/^	def requestTransactions (self):$/;"	kind:member	line:46
+reward	cvmchain/consesus.py	/^def reward (round):$/;"	kind:function	line:20
+score	cvmchain/consesus.py	/^def score (votes):$/;"	kind:function	line:14
+sendBlocks	cvmchain/network/proto.py	/^	def sendBlocks (self, blocks, last):$/;"	kind:member	line:188
+sendData	cvmchain/network/proto.py	/^	def sendData (self, m):$/;"	kind:member	line:48
+sendGetBlocks	cvmchain/network/proto.py	/^	def sendGetBlocks (self, last = None, first = None, hash = None, n = 16):$/;"	kind:member	line:180
+sendGetHeight	cvmchain/network/proto.py	/^	def sendGetHeight (self):$/;"	kind:member	line:174
+sendGetPeers	cvmchain/network/proto.py	/^	def sendGetPeers (self):$/;"	kind:member	line:168
+sendGetTransactions	cvmchain/network/proto.py	/^	def sendGetTransactions (self):$/;"	kind:member	line:191
+sendHeight	cvmchain/network/proto.py	/^	def sendHeight (self, height, last):$/;"	kind:member	line:177
+sendHello	cvmchain/network/proto.py	/^	def sendHello (self, software, version, chain):$/;"	kind:member	line:159
+sendPeers	cvmchain/network/proto.py	/^	def sendPeers (self, peers):$/;"	kind:member	line:171
+sendPing	cvmchain/network/proto.py	/^	def sendPing (self):$/;"	kind:member	line:162
+sendPong	cvmchain/network/proto.py	/^	def sendPong (self):$/;"	kind:member	line:165
+sendTransactions	cvmchain/network/proto.py	/^	def sendTransactions (self, transactions):$/;"	kind:member	line:194
+setup.py	setup.py	1;"	kind:file	line:1
+shutdown	cvmchain/chain/chain.py	/^	def shutdown (self):$/;"	kind:member	line:13
+shutdown	cvmchain/database.py	/^	def shutdown (self):$/;"	kind:member	line:21
+shutdown	cvmchain/network/network.py	/^	def shutdown (self):$/;"	kind:member	line:55
+signal_handler	cvmchain/cvmchain.py	/^def signal_handler (sig, frame):$/;"	kind:function	line:17
+timerLoop	cvmchain/network/proto.py	/^	def timerLoop (self):$/;"	kind:member	line:77
+transaction.py	cvmchain/chain/transaction.py	1;"	kind:file	line:1
+transactions	cvmchain/network/proto.py	/^	def transactions (self, m):$/;"	kind:member	line:153
+usage	cvmchain/cvmchain.py	/^def usage ():$/;"	kind:function	line:25

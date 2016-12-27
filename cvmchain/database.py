@@ -1,10 +1,10 @@
-from pymongo import MongoClient
-from . import config
 import logging
 import coloredlogs
+from pymongo import MongoClient
+from . import config
+
 logger = logging.getLogger ('database')
 coloredlogs.install (level='DEBUG')
-
 
 class Database:
 	def __init__ (self):

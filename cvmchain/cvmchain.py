@@ -3,13 +3,13 @@ import os
 import json
 import signal
 import getopt
+import logging
+import coloredlogs
 
 from .network import *
 from .chain import *
 from . import config, database
 
-import logging
-import coloredlogs
 logger = logging.getLogger ('main')
 coloredlogs.install (level='DEBUG')
 

@@ -1,11 +1,11 @@
 import random
 import json
 import datetime
-from .. import config
-from twisted.internet import protocol, threads, task
-
 import logging
 import coloredlogs
+from twisted.internet import protocol, threads, task
+from .. import config
+
 logger = logging.getLogger ('proto')
 coloredlogs.install (level='DEBUG')
 
@@ -16,16 +16,12 @@ class Proto (protocol.Protocol):
 			'hello': self.hello,
 			'ping': self.ping,
 			'pong': self.pong,
-
 			'getHeight': self.getHeight,
 			'height': self.height,
-
 			'getPeers': self.getPeers,
 			'peers': self.peers,
-
 			'getBlocks': self.getBlocks,
 			'blocks': self.blocks,
-
 			'getTransactions': self.getTransactions,
 			'transactions': self.transactions
 		}
@@ -67,6 +63,7 @@ class Proto (protocol.Protocol):
 			'port': remote.port,
 			'connected': True,
 			'height': None,
+			'last': None,
 			'software': None,
 			'version': None,
 			'lastmessage': datetime.datetime.utcnow ()
@@ -137,6 +134,8 @@ class Proto (protocol.Protocol):
 
 	def height (self, m):
 		self.factory.peers [self.remoteIp]['height'] = m['height']
+		self.factory.peers [self.remoteIp]['last'] = m['last']
+		print (m)
 
 	def getBlocks (self, m):
 		if 'last' in m and 'n' in m:

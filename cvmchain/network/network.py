@@ -1,18 +1,18 @@
 import sys
 import time
+import logging
+import coloredlogs
 from uuid import uuid4
+from twisted.python import log
 from twisted.internet import reactor, protocol
 from twisted.internet.endpoints import TCP4ServerEndpoint, TCP4ClientEndpoint, connectProtocol
-
 from .proto import Proto
 from .. import config
 
-import logging
-import coloredlogs
+
 logger = logging.getLogger ('network')
 coloredlogs.install (level='DEBUG')
 
-from twisted.python import log
 observer = log.PythonLoggingObserver()
 observer.start()
 
@@ -38,6 +38,13 @@ class Network:
 		self.factory = Factory (self.chain)
 		self.endpoint = TCP4ServerEndpoint (reactor, config.CONF['port'])
 		self.endpoint.listen (self.factory)
+
+	# These functions should be callable by the chain
+	def requestBlocks (self):
+		pass
+
+	def requestTransactions (self):
+		pass
 
 	def connect (self, host, port):
 		self.factory.connect (host, port)
