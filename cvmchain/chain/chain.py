@@ -40,11 +40,17 @@ class Chain:
 	def shutdown (self):
 		logger.info ('Shutdown completed')
 
-	# Should be get last block?
+	# Return current height and last block hash
 	def getHeight (self):
 		height = self.db.get ('blocks').count () - 1
 		hash = self.db.get ('blocks').find_one({'height': height })['hash']
 		return height, hash
+
+	# Forge a new block
+	def forge (self):
+		b = Block ()
+		
+		return b
 
 	def getBlocks (self, last = None, first = None, hash = None, n = 16):
 		return [], ''
