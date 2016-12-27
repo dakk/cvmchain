@@ -4,7 +4,7 @@ from base58 import b58encode, b58decode
 from . import account
 
 class Block:
-    raw = {
+    _raw = {
         'hash': None,
         'height': None,
         'forger': None,
@@ -15,10 +15,10 @@ class Block:
     }
 
     def __getitem__ (self, key):
-        return self.raw [key]
+        return self._raw [key]
 
     def __setitem__ (self, key, value):
-        self.raw [key] = value
+        self._raw [key] = value
 
     def _calculateRootHash (self):
         txl = ''
@@ -74,9 +74,6 @@ class Block:
         return b
 
 
-    def forge (self, privkey, db, mempool):
-        pass
-
     def validate (self, db):
         # Validate against db informations (balances, etc)
         if db:
@@ -85,7 +82,7 @@ class Block:
         return True
 
     def toJson (self):
-        return self.raw
+        return self._raw
 
 
     
