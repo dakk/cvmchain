@@ -67,6 +67,3 @@ class MultisigTransaction (Transaction):
 
 class StandardTransaction (Transaction):
     pass
-
-class VoteTransaction (Transaction):
-    pass

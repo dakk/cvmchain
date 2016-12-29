@@ -5,21 +5,23 @@
 import libnacl
 import binascii
 from base58 import b58encode, b58decode
+from ..crypto import hash
 
 class Block:
-    _raw = {
-        'hash': None,
+    def __init__ (self):
+        self._raw = {
+            'hash': None,
 
-        'prevhash': None,
-        'roothash': None,
-        'height': None,
-        'miner': None,
-        'time': None,
-        'target': None,
-        'nonce': None,
+            'prevhash': None,
+            'roothash': None,
+            'height': None,
+            'miner': None,
+            'time': None,
+            'target': None,
+            'nonce': None,
 
-        'transactions': None,
-    }
+            'transactions': None,
+        }
 
     def __getitem__ (self, key):
         return self._raw [key]
@@ -31,13 +33,13 @@ class Block:
         txl = ''
         for tx in self['transactions']:
             txl += tx['hash']
-        self['roothash'] = binascii.hexlify (libnacl.crypto_hash_sha256 (txl)).decode ()
+        self['roothash'] = hash.Hash.sha256 (txl)
         self['hash'] = self._calculateHash ()
         return self['roothash']
 
     def _calculateHash (self):
         hashableBlock = str (self['prevhash']) + str (self['roothash']) + str (self['height']) + str (self['miner']) + str (self['time']) + str (self['target']) + str (self['nonce'])
-        self['hash'] = binascii.hexlify (libnacl.crypto_hash_sha256 (hashableBlock)).decode ()
+        self['hash'] = hash.Hash.sha256 (hashableBlock)
         return self['hash']
 
     def fromJson (data):
@@ -52,14 +54,15 @@ class Block:
 
         # Check hash
         roothash = b._calculateRootHash ()
-        if 'roothash' in data:
-            assert (roothash != data['roothash'], 'roothash mismatch')
+        if 'roothash' in data and roothash != data['roothash']:
+            raise BaseException ('roothash mismatch')
         b['roothash'] = roothash
     
         # Check roothash
         hash = b._calculateHash ()
-        if 'hash' in data:
-            assert (hash != data['hash'], 'hash mismatch')
+        if 'hash' in data and hash != data['hash']:
+            raise BaseException ('hash mismatch')
+            
         b['hash'] = hash
 
         # Check target

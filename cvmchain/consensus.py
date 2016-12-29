@@ -26,7 +26,7 @@ genesis = {
 
 genesis_target = 0x0FFFFFFF
 retarget = 2048
-blocktime = 20
+blocktime = 30
 
 def reward (height):
 	if height == 0:

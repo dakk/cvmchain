@@ -36,6 +36,7 @@ def usage ():
 	print ('\t-d,--daemon\t\t\trun the software as daemon')
 	print ('\t-c,--chain=chainname\t\tblock-chain', '[' + (', '.join (map (lambda x: "'"+x+"'", config.CHAINS))) + ']')
 	print ('\t-p,--port=port\t\t\tdht port')
+	print ('\t--db=dbname\t\t\tname of the db')
 	print ('\t--api-port=port\t\t\tset an api port')
 	print ('\t-s,--seed=host:port,[host:port]\tset a nodes list')
 
@@ -45,7 +46,7 @@ def main ():
 
 	# Argument recognition
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], "hv:VD:c:spd", ["help", "verbose=", "version", "data=", "daemon", "chain=", "api-port=", "api=", "seed=", "port="])
+		opts, args = getopt.getopt(sys.argv[1:], "hv:VD:c:spd", ["help", "verbose=", "version", "data=", "daemon", "chain=", "api-port=", "api=", "seed=", "port=", "db="])
 	except getopt.GetoptError:
 		usage ()
 		sys.exit (2)
@@ -103,11 +104,13 @@ def main ():
 
 	# Overrides	
 	for opt, arg in opts:
-		if opt in ("-c", "--chain"):
+		if opt in ("--db"):
+			config.CONF['db']['database'] = arg
+		elif opt in ("-c", "--chain"):
 			config.CONF['chain'] = arg
 		elif opt in ("-s", "--seed"):
 			for n in arg.split (','):
-				config.CONF['node'].append ({'host': n.split (':')[0], 'port': n.split (':')[1], 'ssl': False})
+				config.CONF['nodes'].append ({'host': n.split (':')[0], 'port': int (n.split (':')[1])})
 		elif opt in ("-p", "--port"):
 			config.CONF['port'] = int (arg)
 		elif opt in ("--api-port"):
@@ -122,7 +125,10 @@ def main ():
 
 	db = database.Database ()
 	chain = Chain (db)
+	#chain.mine ()		
 	network = Network (db, chain)
-	network.connect ('127.0.0.1', 6187)
-		
+
+	for node in config.CONF['nodes']:
+		network.connect (node['host'], node['port'])
+
 	network.loop ()

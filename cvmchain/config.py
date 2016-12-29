@@ -58,6 +58,6 @@ CONF = {
 	},
 
 	'nodes': [
-		{ 'host': 'localhost', 'port': 3030, 'ssl': False }
+		#{ 'host': 'localhost', 'port': 3030 }
 	]
 }

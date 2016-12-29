@@ -60,7 +60,7 @@ class Proto (protocol.Protocol):
 		self.remoteIp = remote.host + ":" + str (remote.port)
 		self.hostIp = host.host + ":" + str (host.port)
 
-		print (self.remoteIp, self.hostIp)
+		#print (self.remoteIp, self.hostIp)
 
 		self.factory.peers [self.remoteIp] = {
 			'host': remote.host,
@@ -78,6 +78,8 @@ class Proto (protocol.Protocol):
 
 		self.timer = task.LoopingCall (lambda: self.timerLoop ())
 		self.timer.start (1.0)
+		self.minertimer = task.LoopingCall (lambda: self.factory.chain.mine ())
+		self.minertimer.start (10.0)
 
 	def timerLoop (self):
 		diff = datetime.datetime.utcnow () - self.factory.peers [self.remoteIp]['lastmessage']
@@ -91,6 +93,7 @@ class Proto (protocol.Protocol):
 			pass 
 			
 	def connectionLost(self, reason):
+		self.minertimer.stop ()
 		self.timer.stop ()
 		self.factory.peers [self.remoteIp]['connected'] = False
 		logger.info ("Disconnected")
@@ -126,7 +129,7 @@ class Proto (protocol.Protocol):
 
 	# List of peers
 	def peers (self, m):
-		print (m)
+		#print (m)
 		# Perform a bootstrap
 		for peer in m['peers']:
 			if (peer['host'] + ':' + str(peer['port'])) != self.hostIp and not (peer['host'] + ':' + str (peer['port'])) in self.factory.peers: 
@@ -134,31 +137,37 @@ class Proto (protocol.Protocol):
 
 	def getHeight (self, m):
 		d = threads.deferToThread (self.factory.chain.getHeight)
-		d.addCallback (lambda res: self.sendHeight (res[0], res[1]))
+		d.addCallback (lambda res: self.sendHeight (res['height'], res['hash']))
 
 	def height (self, m):
 		self.factory.peers [self.remoteIp]['height'] = m['height']
 		self.factory.peers [self.remoteIp]['last'] = m['last']
-		print (m)
+
+		height = self.factory.chain.getHeight ()
+
+		if m['height'] > height['height']:
+			self.sendGetBlocks (last=height['hash'], n=16)
+
+		#print (m)
 
 	def getBlocks (self, m):
 		if 'last' in m and 'n' in m:
-			d = threads.deferToThread (self.chain.getBlocks, last=m['last'], n=m['n'])
+			d = threads.deferToThread (self.factory.chain.getBlocks, last=m['last'], n=m['n'])
 		elif 'first' in m and 'n' in m:
-			d = threads.deferToThread (self.chain.getBlocks, first=m['first'], n=m['n'])
+			d = threads.deferToThread (self.factory.chain.getBlocks, first=m['first'], n=m['n'])
 		elif 'hash':
-			d = threads.deferToThread (self.chain.getBlocks, hash=m['hash'])
-		d.addCallback (lambda res: self.sendHeight (res[0], res[1]))
+			d = threads.deferToThread (self.factory.chain.getBlocks, hash=m['hash'])
+		d.addCallback (lambda res: self.sendBlocks (res['blocks'], res['last']))
 
 	def blocks (self, m):
-		threads.deferToThread (self.chain.pushBlocks, m['blocks'])
+		threads.deferToThread (self.factory.chain.pushBlocks, m['blocks'])
 
 	def getTransactions (self, m):
-		d = threads.deferToThread (self.chain.getTransactions)
+		d = threads.deferToThread (self.factory.chain.getTransactions)
 		d.addCallback (lambda transactions: self.sendTransactions (transactions))
 
 	def transactions (self, m):
-		threads.deferToThread (self.chain.pushTransactions, m['transactions'])
+		threads.deferToThread (self.factory.chain.pushTransactions, m['transactions'])
 
 
 	###################
@@ -185,12 +194,12 @@ class Proto (protocol.Protocol):
 		self.sendData ({'type': 'height', 'height': height, 'last': last})
 
 	def sendGetBlocks (self, last = None, first = None, hash = None, n = 16):
-		if hash:
+		if hash != None:
 			self.sendData ({'type': 'getBlocks', 'hash': last})
-		elif first and n:
+		elif first != None and n != None:
 			self.sendData ({'type': 'getBlocks', 'first': first, 'n': n})
-		elif last and n:
-			self.sendData ({'type': 'getBlocks', 'last': first, 'n': n})
+		elif last != None and n != None:
+			self.sendData ({'type': 'getBlocks', 'last': last, 'n': n})
 
 	def sendBlocks (self, blocks, last):
 		self.sendData ({'type': 'blocks', 'blocks': blocks, 'last': last})
