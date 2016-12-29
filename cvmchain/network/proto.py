@@ -78,8 +78,6 @@ class Proto (protocol.Protocol):
 
 		self.timer = task.LoopingCall (lambda: self.timerLoop ())
 		self.timer.start (1.0)
-		self.minertimer = task.LoopingCall (lambda: self.factory.chain.mine ())
-		self.minertimer.start (10.0)
 
 	def timerLoop (self):
 		diff = datetime.datetime.utcnow () - self.factory.peers [self.remoteIp]['lastmessage']
@@ -89,11 +87,9 @@ class Proto (protocol.Protocol):
 		if diff > datetime.timedelta (seconds=random.randint (5,10)): 
 			self.sendGetHeight ()
 		if diff > datetime.timedelta (minutes=15):
-			# Disconnect the node
 			pass 
 			
 	def connectionLost(self, reason):
-		self.minertimer.stop ()
 		self.timer.stop ()
 		self.factory.peers [self.remoteIp]['connected'] = False
 		logger.info ("Disconnected")

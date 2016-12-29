@@ -7,6 +7,7 @@ from . import transaction, block
 
 import time
 import pymongo
+import random
 import logging
 import coloredlogs
 logger = logging.getLogger ('chain')
@@ -70,7 +71,7 @@ class Chain:
 		b = block.Block.fromJson ({
 			'prevhash': self.lastblock['hash'],
 			'target': 0x0FFFFFF,
-			'nonce': 0,
+			'nonce': random.randint (0, 10000),
 			'height': self.lastblock['height'] + 1,
 			'miner': 'A5rr5hr1i4FqrjvfnEFybdSmxeULdRQEb1gBgvrihqYD',
 			'transactions': [],
@@ -78,6 +79,7 @@ class Chain:
 		})
 		b._calculateHash ()
 		bj = b.toJson ()
+		logger.info ('Mined new block: %s %d', bj['hash'], bj['height'])
 		self.pushBlocks ([bj])
 
 	def getBlocks (self, last = None, first = None, hash = None, n = 16):
@@ -88,6 +90,8 @@ class Chain:
 		#print (last, n)
 		if last != None and n != None:
 			l = self.db.get ('blocks').find_one ({'hash': last})
+			if l == None:
+				return {'blocks': [], 'last': ''}
 			blocksd = self.db.get ('blocks').find ({ 'height': {'$gte': l['height'] + 1}}, projection={'_id': False}).sort ("height").limit (n)
 
 			for b in blocksd:

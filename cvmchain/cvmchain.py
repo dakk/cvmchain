@@ -9,6 +9,7 @@ import signal
 import getopt
 import logging
 import coloredlogs
+from twisted.internet import protocol, threads, task
 
 from .network import *
 from .chain import *
@@ -39,6 +40,7 @@ def usage ():
 	print ('\t--db=dbname\t\t\tname of the db')
 	print ('\t--api-port=port\t\t\tset an api port')
 	print ('\t-s,--seed=host:port,[host:port]\tset a nodes list')
+	print ('\t--mine\tset a nodes list')
 
 
 def main ():
@@ -46,7 +48,7 @@ def main ():
 
 	# Argument recognition
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], "hv:VD:c:spd", ["help", "verbose=", "version", "data=", "daemon", "chain=", "api-port=", "api=", "seed=", "port=", "db="])
+		opts, args = getopt.getopt(sys.argv[1:], "hv:VD:c:spd", ["mine", "help", "verbose=", "version", "data=", "daemon", "chain=", "api-port=", "api=", "seed=", "port=", "db="])
 	except getopt.GetoptError:
 		usage ()
 		sys.exit (2)
@@ -103,6 +105,7 @@ def main ():
 	logger.info ('Configuration file %s loaded', config.DATA_DIR+'/'+config.APP_NAME+'.json')
 
 	# Overrides	
+	mine = False
 	for opt, arg in opts:
 		if opt in ("--db"):
 			config.CONF['db']['database'] = arg
@@ -115,6 +118,8 @@ def main ():
 			config.CONF['port'] = int (arg)
 		elif opt in ("--api-port"):
 			config.CONF['api']['port'] = int (arg)
+		elif opt in ("--mine"):
+			mine = True
 
 	# Bind signals
 	signal.signal(signal.SIGINT, signal_handler)
@@ -130,5 +135,9 @@ def main ():
 
 	for node in config.CONF['nodes']:
 		network.connect (node['host'], node['port'])
+
+	if mine:
+		timer = task.LoopingCall (lambda: chain.mine ())
+		timer.start (7.0)
 
 	network.loop ()
