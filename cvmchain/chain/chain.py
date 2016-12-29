@@ -27,12 +27,12 @@ class Chain:
 			self.db.get ('blocks').insert_one (b.toJson ())
 			logger.info ('Genesis block for %s: %s', config.CONF['chain'], b['hash'])
 
-			# Push the genesis forger amount
+			# Push the genesis miner amount
 			self.db.get ('accounts').insert_one ({
-				'address': b['forger'],
+				'address': b['miner'],
 				'balance': consensus.genesis_reward,
 				'nonce': 0,
-				'forged': consensus.genesis_reward,
+				'mined': consensus.genesis_reward,
 				'sent': 0,
 				'received': 0
 			})			
@@ -46,8 +46,8 @@ class Chain:
 		hash = self.db.get ('blocks').find_one({'height': height })['hash']
 		return height, hash
 
-	# Forge a new block
-	def forge (self):
+	# Mine a new block
+	def mine (self):
 		b = Block ()
 		
 		return b
@@ -56,6 +56,9 @@ class Chain:
 		return [], ''
 
 	def pushBlocks (self, blocks):
+		# Check every block for validity
+		# Remove tx included in the blocks from the mempool
+		# Push blocks to db
 		pass
 
 	def getTransactions (self):

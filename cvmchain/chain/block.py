@@ -7,7 +7,7 @@ class Block:
     _raw = {
         'hash': None,
         'height': None,
-        'forger': None,
+        'miner': None,
         'timestamp': None,
         'transactions': None,
         'roothash': None,
@@ -29,33 +29,17 @@ class Block:
         return self['roothash']
 
     def _calculateHash (self):
-        hashableBlock = str (self['prev']) + str (self['height']) + str (self['forger']) + str (self['timestamp']) + str (self['roothash']) + str (self['signature'])
+        hashableBlock = str (self['prev']) + str (self['height']) + str (self['miner']) + str (self['timestamp']) + str (self['roothash'])
         self['hash'] = binascii.hexlify (libnacl.crypto_hash_sha256 (hashableBlock)).decode ()
         return self['hash']
-
-    def _sign (self, privkey):
-        kp = account.KeyPair (privkey)
-        signableBlock = str (self['prev']) + str (self['height']) + str (self['forger']) + str (self['timestamp']) + str (self['roothash'])
-        self['signature'] = kp.sign (signableBlock)
-        self['hash'] = self._calculateHash ()
-        return self['signature']
-
-    def _verify (self):
-        signableBlock = str (self['prev']) + str (self['height']) + str (self['forger']) + str (self['timestamp']) + str (self['roothash'])
-        try:
-            account.KeyPair.verify (self['forger'], signableBlock, self['signature'])
-            return True
-        except:
-            return False
 
     def fromJson (data):
         b = Block ()
         b['prev'] = data['prev']
         b['height'] = data['height']
-        b['forger'] = data['forger']
+        b['miner'] = data['miner']
         b['timestamp'] = data['timestamp']
         b['transactions'] = data['transactions']
-        b['signature'] = data['signature']
 
         roothash = b._calculateRootHash ()
         if 'roothash' in data:
@@ -66,10 +50,6 @@ class Block:
         if 'hash' in data:
             assert (hash != data['hash'], 'hash mismatch')
         b['hash'] = hash
-
-        if 'signature' in data:
-            b['signature'] = data['signature']
-            assert (b._verify (), 'wrong signature')
 
         return b
 
