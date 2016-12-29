@@ -1,0 +1,1 @@
+mongo cvmchain --eval "db.dropDatabase()"

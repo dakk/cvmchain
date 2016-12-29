@@ -1,3 +1,7 @@
+# Copyright (c) 2016-2017 Davide Gessa
+# Distributed under the MIT software license, see the accompanying
+# file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 from .. import config, consensus
 from . import transaction, block
 
@@ -24,15 +28,19 @@ class Chain:
 			genesisBlock = consensus.genesis[config.CONF['chain']]
 			b = block.Block.fromJson (genesisBlock)
 
+			"""if not b.verify ():
+				logger.critical ('Invalid genesis block, exiting.')
+				sys.exit (0)
+			"""
 			self.db.get ('blocks').insert_one (b.toJson ())
 			logger.info ('Genesis block for %s: %s', config.CONF['chain'], b['hash'])
 
 			# Push the genesis miner amount
 			self.db.get ('accounts').insert_one ({
 				'address': b['miner'],
-				'balance': consensus.genesis_reward,
+				'balance': consensus.reward (0),
 				'nonce': 0,
-				'mined': consensus.genesis_reward,
+				'mined': consensus.reward (0),
 				'sent': 0,
 				'received': 0
 			})			

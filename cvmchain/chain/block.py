@@ -1,17 +1,24 @@
+# Copyright (c) 2016-2017 Davide Gessa
+# Distributed under the MIT software license, see the accompanying
+# file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 import libnacl
 import binascii
 from base58 import b58encode, b58decode
-from . import account
 
 class Block:
     _raw = {
         'hash': None,
+
+        'prevhash': None,
+        'roothash': None,
         'height': None,
         'miner': None,
-        'timestamp': None,
+        'time': None,
+        'target': None,
+        'nonce': None,
+
         'transactions': None,
-        'roothash': None,
-        'prev': None
     }
 
     def __getitem__ (self, key):
@@ -29,27 +36,33 @@ class Block:
         return self['roothash']
 
     def _calculateHash (self):
-        hashableBlock = str (self['prev']) + str (self['height']) + str (self['miner']) + str (self['timestamp']) + str (self['roothash'])
+        hashableBlock = str (self['prevhash']) + str (self['roothash']) + str (self['height']) + str (self['miner']) + str (self['time']) + str (self['target']) + str (self['nonce'])
         self['hash'] = binascii.hexlify (libnacl.crypto_hash_sha256 (hashableBlock)).decode ()
         return self['hash']
 
     def fromJson (data):
         b = Block ()
-        b['prev'] = data['prev']
+        b['prevhash'] = data['prevhash']
         b['height'] = data['height']
         b['miner'] = data['miner']
-        b['timestamp'] = data['timestamp']
+        b['time'] = data['time']
+        b['target'] = data['target']
+        b['nonce'] = data['nonce']
         b['transactions'] = data['transactions']
 
+        # Check hash
         roothash = b._calculateRootHash ()
         if 'roothash' in data:
             assert (roothash != data['roothash'], 'roothash mismatch')
         b['roothash'] = roothash
-
+    
+        # Check roothash
         hash = b._calculateHash ()
         if 'hash' in data:
             assert (hash != data['hash'], 'hash mismatch')
         b['hash'] = hash
+
+        # Check target
 
         return b
 

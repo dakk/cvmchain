@@ -12,7 +12,7 @@ setup(name='cvmchain',
 	author=config.AUTHOR,
 	author_email=config.AUTHOR_EMAIL,
 	setup_requires='setuptools',
-	packages=['cvmchain', 'cvmchain.network', 'cvmchain.chain'],
+	packages=['cvmchain', 'cvmchain.network', 'cvmchain.chain', 'cvmchain.crypto'],
 	entry_points={
 		'console_scripts': [
 			'cvmchain=cvmchain.cvmchain:main',
