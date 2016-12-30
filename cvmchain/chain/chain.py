@@ -35,11 +35,11 @@ class Chain:
 				sys.exit (0)
 			"""
 			self.db.get ('blocks').insert_one (b.toJson ())
-			logger.info ('Genesis block for %s: %s', config.CONF['chain'], b['hash'])
+			logger.info ('Genesis block for %s: %s', config.CONF['chain'], b.hash)
 
 			# Push the genesis miner amount
 			self.db.get ('accounts').insert_one ({
-				'address': b['miner'],
+				'address': b.miner,
 				'balance': consensus.reward (0),
 				'nonce': 0,
 				'mined': consensus.reward (0),
@@ -47,16 +47,11 @@ class Chain:
 				'received': 0
 			})
 	
-		self.lastblock = {
-			'height': self.db.get ('blocks').count () - 1,
-			'hash': self.db.get ('blocks').find_one({'height': self.db.get ('blocks').count () - 1 })['hash']
-		}
+		self._updateHeight ()
+
 
 	def _updateHeight (self):
-		self.lastblock = {
-			'height': self.db.get ('blocks').count () - 1,
-			'hash': self.db.get ('blocks').find_one({'height': self.db.get ('blocks').count () - 1 })['hash']
-		}
+		self.lastblock = self.db.get ('blocks').find_one({'height': self.db.get ('blocks').count () - 1 })
 		logger.debug ('Height: %d (%s)', self.lastblock['height'], self.lastblock['hash'])
 
 	def shutdown (self):
@@ -67,20 +62,10 @@ class Chain:
 		return self.lastblock
 
 	# Mine a new block
-	def mine (self):
-		b = block.Block.fromJson ({
-			'prevhash': self.lastblock['hash'],
-			'target': 0x09FFFFFF,
-			'nonce': 0,
-			'height': self.lastblock['height'] + 1,
-			'miner': 'A5rr5hr1i4FqrjvfnEFybdSmxeULdRQEb1gBgvrihqYD',
-			'transactions': [],
-			'time': int (time.time ())
-		})
-
-		while not b.checkTarget ():
-			b['nonce'] += 1
-
+	def mine (self, miner):
+		logger.info ('Starting miner...')
+		b = block.BlockMiner (self.lastblock, self.getMempool (), miner)
+		b.mine ()
 		bj = b.toJson ()
 		logger.info ('Mined new block: %s %d', bj['hash'], bj['height'])
 		self.pushBlocks ([bj])
@@ -113,9 +98,10 @@ class Chain:
 			self.db.get ('blocks').insert_one (bb.toJson ())
 		self._updateHeight ()
 
+
 	def getMempool (self):
 		txs = []
-		for hash, tx in dict.iteritems():
+		for hash, tx in self.mempool:
 			txs.append (tx)
 
 		return txs

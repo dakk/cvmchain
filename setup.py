@@ -16,6 +16,7 @@ setup(name='cvmchain',
 	entry_points={
 		'console_scripts': [
 			'cvmchain=cvmchain.cvmchain:main',
+			'cvm-gengenesis=cvmchain.cvmchain:gengenesis',
 		],
 	},
 	install_requires=open ('requirements.txt', 'r').read ().split ('\n')

@@ -5,14 +5,14 @@
 # Genesis block
 genesis = {
 	'testnet': {
-		"hash": "1dc40380f8cdac33fc44f47b59e777ac0ae9b01e341a3d71ae7eac545529a3f4",
+		"hash": "0000007a79ddf8144ca8ad634053a7eaa74b0d34d67c2f70834191ef652ac587",
 		"prevhash": "0000000000000000000000000000000000000000000000000000000000000000",
 		"height": 0,
 		"miner": "A5rr5hr1i4FqrjvfnEFybdSmxeULdRQEb1gBgvrihqYD",
-		"time": 1482796800,
+		"time": 1483098543,
 		"transactions": [],
-		"target": 0x0FFFFFF,
-		"nonce": 12543,
+		"target": "09FFFFFF",
+		"nonce": 1601136,
 		"roothash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 	},
 	'mainnet': {

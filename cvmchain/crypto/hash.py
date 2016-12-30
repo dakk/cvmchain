@@ -14,3 +14,6 @@ class Hash:
         m = hashlib.sha256 ()
         m.update (data.encode ())
         return binascii.hexlify (m.digest ()).decode ()
+
+    def dsha256 (data):
+        return Hash.sha256 (Hash.sha256 (data))

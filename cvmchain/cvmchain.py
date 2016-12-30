@@ -13,7 +13,7 @@ from twisted.internet import protocol, threads, task
 
 from .network import *
 from .chain import *
-from . import config, database
+from . import config, database, consensus
 
 logger = logging.getLogger ('main')
 coloredlogs.install (level='DEBUG')
@@ -27,6 +27,24 @@ def signal_handler (sig, frame):
 	db.shutdown ()
 
 
+def gengenesis ():
+	logger.info ('%s %s', config.APP_NAME, config.APP_VERSION)
+
+	lastblock = {
+		'hash': "0000000000000000000000000000000000000000000000000000000000000000", 
+		'height': -1, 
+		'target': "09FFFFFF"
+	}
+
+	b = block.BlockMiner (lastblock, [], 'A5rr5hr1i4FqrjvfnEFybdSmxeULdRQEb1gBgvrihqYD')
+	logger.info ('Mining genesis block...')
+	start = time.time ()
+	b.mine ()
+	end = time.time ()
+	logger.info ('Mined genesis block in', end - start, 'seconds')
+	print (b.toJson ())
+	
+	
 def usage ():
 	print ('Usage:', sys.argv[0], '[OPTIONS]\n')
 	print ('Mandatory arguments:')
@@ -41,6 +59,7 @@ def usage ():
 	print ('\t--api-port=port\t\t\tset an api port')
 	print ('\t-s,--seed=host:port,[host:port]\tset a nodes list')
 	print ('\t--mine\tset a nodes list')
+
 
 
 def main ():
@@ -130,14 +149,17 @@ def main ():
 
 	db = database.Database ()
 	chain = Chain (db)
-	#chain.mine ()		
 	network = Network (db, chain)
 
 	for node in config.CONF['nodes']:
 		network.connect (node['host'], node['port'])
 
 	if mine:
-		timer = task.LoopingCall (lambda: chain.mine ())
-		timer.start (1024.0)
+		def mine ():
+			while True:
+				time.sleep (15)
+				chain.mine ('A5rr5hr1i4FqrjvfnEFybdSmxeULdRQEb1gBgvrihqYD')
+
+		d = threads.deferToThread (mine) 
 
 	network.loop ()
