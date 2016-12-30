@@ -26,8 +26,8 @@ class Proto (protocol.Protocol):
 			'peers': self.peers,
 			'getBlocks': self.getBlocks,
 			'blocks': self.blocks,
-			'getTransactions': self.getTransactions,
-			'transactions': self.transactions
+			'getMempool': self.getMempool,
+			'mempool': self.mempool
 		}
 
 	def dataReceived (self, data):
@@ -158,12 +158,15 @@ class Proto (protocol.Protocol):
 	def blocks (self, m):
 		threads.deferToThread (self.factory.chain.pushBlocks, m['blocks'])
 
-	def getTransactions (self, m):
-		d = threads.deferToThread (self.factory.chain.getTransactions)
-		d.addCallback (lambda transactions: self.sendTransactions (transactions))
 
-	def transactions (self, m):
-		threads.deferToThread (self.factory.chain.pushTransactions, m['transactions'])
+	def getMempool (self, m):
+		d = threads.deferToThread (self.factory.chain.getMempool)
+		d.addCallback (lambda transactions: self.sendMempool (transactions))
+
+	def mempool (self, m):
+		threads.deferToThread (self.factory.chain.updateMempool, m['transactions'])
+
+
 
 
 	###################
@@ -200,8 +203,8 @@ class Proto (protocol.Protocol):
 	def sendBlocks (self, blocks, last):
 		self.sendData ({'type': 'blocks', 'blocks': blocks, 'last': last})
 
-	def sendGetTransactions (self):
-		self.sendData ({'type': 'getTransactions'})
+	def sendGetMempool (self):
+		self.sendData ({'type': 'getMempool'})
 
-	def sendTransactions (self, transactions):
-		self.sendData ({'type': 'transactions', 'transactions': transactions})
+	def sendMempool (self, transactions):
+		self.sendData ({'type': 'mempool', 'transactions': transactions})

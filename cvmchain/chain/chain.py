@@ -70,14 +70,17 @@ class Chain:
 	def mine (self):
 		b = block.Block.fromJson ({
 			'prevhash': self.lastblock['hash'],
-			'target': 0x0FFFFFF,
-			'nonce': random.randint (0, 10000),
+			'target': 0x09FFFFFF,
+			'nonce': 0,
 			'height': self.lastblock['height'] + 1,
 			'miner': 'A5rr5hr1i4FqrjvfnEFybdSmxeULdRQEb1gBgvrihqYD',
 			'transactions': [],
 			'time': int (time.time ())
 		})
-		b._calculateHash ()
+
+		while not b.checkTarget ():
+			b['nonce'] += 1
+
 		bj = b.toJson ()
 		logger.info ('Mined new block: %s %d', bj['hash'], bj['height'])
 		self.pushBlocks ([bj])
@@ -110,14 +113,14 @@ class Chain:
 			self.db.get ('blocks').insert_one (bb.toJson ())
 		self._updateHeight ()
 
-	def getTransactions (self):
+	def getMempool (self):
 		txs = []
 		for hash, tx in dict.iteritems():
 			txs.append (tx)
 
 		return txs
 
-	def pushTransactions (self, transactions):
+	def updateMempool (self, transactions):
 		for txdata in transactions:
 			if not txdata['hash'] in self.mempool:
 				tx = transaction.Transaction.fromJson (tx)

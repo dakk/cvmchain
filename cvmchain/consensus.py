@@ -5,7 +5,7 @@
 # Genesis block
 genesis = {
 	'testnet': {
-		"hash": "15ee70aa4e615268f44034f9527c21b9e060a462c61d21d65eea59990ccc55f0",
+		"hash": "1dc40380f8cdac33fc44f47b59e777ac0ae9b01e341a3d71ae7eac545529a3f4",
 		"prevhash": "0000000000000000000000000000000000000000000000000000000000000000",
 		"height": 0,
 		"miner": "A5rr5hr1i4FqrjvfnEFybdSmxeULdRQEb1gBgvrihqYD",
@@ -27,6 +27,7 @@ genesis = {
 genesis_target = 0x0FFFFFFF
 retarget = 2048
 blocktime = 30
+maxtxinblock = 1024
 
 def reward (height):
 	if height == 0:

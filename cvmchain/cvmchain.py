@@ -138,6 +138,6 @@ def main ():
 
 	if mine:
 		timer = task.LoopingCall (lambda: chain.mine ())
-		timer.start (7.0)
+		timer.start (1024.0)
 
 	network.loop ()

@@ -61,13 +61,21 @@ class Block:
         # Check roothash
         hash = b._calculateHash ()
         if 'hash' in data and hash != data['hash']:
+            print (data['hash'], hash)
             raise BaseException ('hash mismatch')
             
         b['hash'] = hash
 
-        # Check target
-
         return b
+
+
+    def checkTarget (self):
+        self['hash'] = self._calculateHash ()
+        if int (self['hash'], 16) > (self['target'] * 2 ** ( 8 * (0x1d - 3))): 
+            return False
+        else:
+            return True
+
 
 
     def validate (self, db):
