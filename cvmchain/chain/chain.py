@@ -70,6 +70,8 @@ class Chain:
 		logger.info ('Mined new block: %s %d', bj['hash'], bj['height'])
 		self.pushBlocks ([bj])
 
+		# TODO Propagate the fresh mined block without a getBlock
+
 	def getBlocks (self, last = None, first = None, hash = None, n = 16):
 		#print ('getblocks', last, n)
 		blocks = []
@@ -91,10 +93,9 @@ class Chain:
 		return { 'blocks': blocks, 'last': lasthash }
 
 	def pushBlocks (self, blocks):
-		#print ('pushblocks', blocks)
-		#print (blocks)
 		for b in blocks:
 			bb = block.Block.fromJson (b)
+			# TODO check block prev
 			self.db.get ('blocks').insert_one (bb.toJson ())
 		self._updateHeight ()
 
@@ -103,7 +104,8 @@ class Chain:
 		txs = []
 		for hash, tx in self.mempool:
 			txs.append (tx)
-
+		
+		#sorted (txs, key=hash)
 		return txs
 
 	def updateMempool (self, transactions):

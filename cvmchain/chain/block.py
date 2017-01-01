@@ -99,10 +99,10 @@ class Block:
 
 	##### Methods
 	def _calculateRootHash (self):
-		txl = ''
-		for tx in self.transactions:
-			txl += tx.hash
-		self.__roothash = hash.Hash.sha256 (txl)
+		txl = list (map (lambda tx: tx.hash, self.transactions))
+		txl.sort ()			
+
+		self.__roothash = hash.merkle (txl)
 		self._calculateHash ()
 		return self.roothash
 
@@ -110,7 +110,7 @@ class Block:
 		hashableBlock = str (self.prevhash) + str (self.roothash) + str (self.height) + \
 			str (self.miner) + str (self.time) + str (self.target) + str (self.nonce)
 
-		self.__hash = hash.Hash.dsha256 (hashableBlock)
+		self.__hash = hash.dsha256 (hashableBlock)
 		return self.hash
 
 
