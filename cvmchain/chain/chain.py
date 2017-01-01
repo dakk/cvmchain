@@ -95,8 +95,12 @@ class Chain:
 	def pushBlocks (self, blocks):
 		for b in blocks:
 			bb = block.Block.fromJson (b)
-			# TODO check block prev
-			self.db.get ('blocks').insert_one (bb.toJson ())
+
+			if bb.prevhash == self.lastblock['hash'] and bb.height == self.lastblock['height'] + 1:
+				bbjs = bb.toJson ()
+				self.db.get ('blocks').insert_one (bbjs)
+				self.lastblock = bbjs
+
 		self._updateHeight ()
 
 

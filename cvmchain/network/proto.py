@@ -128,7 +128,8 @@ class Proto (protocol.Protocol):
 		#print (m)
 		# Perform a bootstrap
 		for peer in m['peers']:
-			if (peer['host'] + ':' + str(peer['port'])) != self.hostIp and not (peer['host'] + ':' + str (peer['port'])) in self.factory.peers: 
+			hp = peer['host'] + ':' + str(peer['port'])
+			if hp != self.hostIp and not hp in self.factory.peers: 
 				self.factory.connect (peer['host'], peer['port'])
 
 	def getHeight (self, m):

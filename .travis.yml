@@ -1,0 +1,11 @@
+dist: 'trusty'
+language: python
+python:
+  - '3.4.5'
+services:
+  - mongodb
+addons:
+  mongodb: '3.2.11'
+before_script:
+  - 
+- cvmchain &> /dev/null &
