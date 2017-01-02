@@ -26,6 +26,7 @@ class Proto (protocol.Protocol):
 			'peers': self.peers,
 			'getBlocks': self.getBlocks,
 			'blocks': self.blocks,
+			'block': self.block,
 			'getMempool': self.getMempool,
 			'mempool': self.mempool
 		}
@@ -43,14 +44,15 @@ class Proto (protocol.Protocol):
 				continue
 
 			if m['type'] in self.messageHandlers:
-				self.factory.peers [self.remoteIp]['lastmessage'] = datetime.datetime.utcnow ()
+				if self.remoteIp in self.factory.peers:
+					self.factory.peers [self.remoteIp]['lastmessage'] = datetime.datetime.utcnow ()
 				logger.info ('New message: %s', m['type'])
 				self.messageHandlers [m['type']] (m)
 			else:
 				logger.warning ('Unhandled message: %s', m['type'])
 
 	def sendData (self, m):
-		logger.debug ('Send message: %s', str (m['type']))
+		#logger.debug ('Send message: %s', str (m['type']))
 		data = json.dumps (m)
 		self.transport.write (bytes (data.encode ()) + b'\n')
 
@@ -60,19 +62,6 @@ class Proto (protocol.Protocol):
 		self.remoteIp = remote.host + ":" + str (remote.port)
 		self.hostIp = host.host + ":" + str (host.port)
 
-		#print (self.remoteIp, self.hostIp)
-
-		self.factory.peers [self.remoteIp] = {
-			'host': remote.host,
-			'port': remote.port,
-			'connected': True,
-			'height': None,
-			'last': None,
-			'software': None,
-			'version': None,
-			'lastmessage': datetime.datetime.utcnow ()
-		}
-
 		logger.info ("Connection from %s", self.transport.getPeer())
 		self.sendHello (config.APP_NAME, config.APP_VERSION, config.CONF['chain'])
 
@@ -80,6 +69,9 @@ class Proto (protocol.Protocol):
 		self.timer.start (1.0)
 
 	def timerLoop (self):
+		if not self.remoteIp in self.factory.peers:
+			return
+
 		diff = datetime.datetime.utcnow () - self.factory.peers [self.remoteIp]['lastmessage']
 
 		if diff > datetime.timedelta (seconds=random.randint (45,75)): 
@@ -91,7 +83,10 @@ class Proto (protocol.Protocol):
 			
 	def connectionLost(self, reason):
 		self.timer.stop ()
-		self.factory.peers [self.remoteIp]['connected'] = False
+
+		if self.remoteIp in self.factory.peers:
+			self.factory.peers [self.remoteIp]['connected'] = False
+			self.factory.peerIds.remove (self.factory.peers [self.remoteIp]['nodeid'])
 		logger.info ("Disconnected")
 			
 
@@ -108,8 +103,25 @@ class Proto (protocol.Protocol):
 
 	# Send the hello message
 	def hello (self, m):
-		self.factory.peers [self.remoteIp]['software'] = m['software']
-		self.factory.peers [self.remoteIp]['version'] = m['version']
+		if m['nodeid'] in self.factory.peerIds:
+			return
+
+		remote = self.transport.getPeer()
+
+		self.factory.peerIds.append (m['nodeid'])
+		self.factory.peers [self.remoteIp] = {
+			'proto': self,
+			'host': remote.host,
+			'port': remote.port,
+			'connected': True,
+			'height': None,
+			'last': None,
+			'software': m['software'],
+			'version': m['version'],
+			'lastmessage': datetime.datetime.utcnow (),
+			'nodeid': m['nodeid'],
+			'blocksreceived': -1
+		}
 
 		self.sendGetHeight ()
 		self.sendPing ()
@@ -125,11 +137,11 @@ class Proto (protocol.Protocol):
 
 	# List of peers
 	def peers (self, m):
-		#print (m)
 		# Perform a bootstrap
 		for peer in m['peers']:
 			hp = peer['host'] + ':' + str(peer['port'])
 			if hp != self.hostIp and not hp in self.factory.peers: 
+				logger.debug ('Connecting to %s', hp)
 				self.factory.connect (peer['host'], peer['port'])
 
 	def getHeight (self, m):
@@ -143,7 +155,7 @@ class Proto (protocol.Protocol):
 		height = self.factory.chain.getHeight ()
 
 		if m['height'] > height['height']:
-			self.sendGetBlocks (last=height['hash'], n=16)
+			self.sendGetBlocks (last=height['hash'], n=128)
 
 		#print (m)
 
@@ -157,7 +169,13 @@ class Proto (protocol.Protocol):
 		d.addCallback (lambda res: self.sendBlocks (res['blocks'], res['last']))
 
 	def blocks (self, m):
+		self.factory.peers [self.remoteIp]['blocksreceived'] = len (m['blocks'])
 		threads.deferToThread (self.factory.chain.pushBlocks, m['blocks'])
+
+	def block (self, m):
+		self.factory.peers [self.remoteIp]['blocksreceived'] = 1
+		threads.deferToThread (self.factory.chain.pushBlocks, [m['block']])
+		self.factory.broadcastBlock (m['block'])
 
 
 	def getMempool (self, m):
@@ -173,7 +191,7 @@ class Proto (protocol.Protocol):
 	###################
 	# Message factory
 	def sendHello (self, software, version, chain):
-		self.sendData ({'type': 'hello', 'software': software, 'version': version, 'chain': chain})
+		self.sendData ({'type': 'hello', 'nodeid': self.factory.nodeid, 'software': software, 'version': version, 'chain': chain})
 
 	def sendPing (self):
 		self.sendData ({'type': 'ping'})
@@ -203,6 +221,9 @@ class Proto (protocol.Protocol):
 
 	def sendBlocks (self, blocks, last):
 		self.sendData ({'type': 'blocks', 'blocks': blocks, 'last': last})
+
+	def sendBlock (self, block):
+		self.sendData ({'type': 'block', 'block': block})
 
 	def sendGetMempool (self):
 		self.sendData ({'type': 'getMempool'})

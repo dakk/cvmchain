@@ -174,6 +174,14 @@ class BlockMiner (Block):
 			height=lastblock['height'] + 1, miner=miner, transactions=mempool, time=int (time.time ()))
 		self._calculateRootHash ()
 
+	def updateLastblock (self, lastblock):
+		self.prevhash = lastblock['hash']
+		self.target = lastblock['target']
+		self.nonce = 0
+		self.height = lastblock['height'] + 1
+		self.time = int (time.time ())
+		self._calculateRootHash ()
+
 	def mine (self):
 		while not self.checkTarget ():
 			self.nonce += 1

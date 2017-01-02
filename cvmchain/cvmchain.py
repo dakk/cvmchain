@@ -156,9 +156,7 @@ def main ():
 
 	if mine:
 		def mine ():
-			while True:
-				time.sleep (15)
-				chain.mine ('A5rr5hr1i4FqrjvfnEFybdSmxeULdRQEb1gBgvrihqYD')
+			chain.mine ('A5rr5hr1i4FqrjvfnEFybdSmxeULdRQEb1gBgvrihqYD' + str (config.CONF['port']))
 
 		d = threads.deferToThread (mine) 
 

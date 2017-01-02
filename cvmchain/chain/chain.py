@@ -10,6 +10,7 @@ import pymongo
 import random
 import logging
 import coloredlogs
+from threading import Lock
 logger = logging.getLogger ('chain')
 coloredlogs.install (level='DEBUG')
 
@@ -17,6 +18,8 @@ class Chain:
 	def __init__ (self, db):
 		self.db = db
 		self.mempool = {}
+		self.miner = None
+		self.chainLock = Lock ()
 
 		if self.db.get ('blocks').count () == 0:
 			logger.info ('Initializing the chain database...')
@@ -46,13 +49,22 @@ class Chain:
 				'sent': 0,
 				'received': 0
 			})
-	
+
+		self.sync = False
 		self._updateHeight ()
 
+	def setFactory (self, f):
+		self.factory = f
 
 	def _updateHeight (self):
 		self.lastblock = self.db.get ('blocks').find_one({'height': self.db.get ('blocks').count () - 1 })
-		logger.debug ('Height: %d (%s)', self.lastblock['height'], self.lastblock['hash'])
+
+		if self.miner != None and self.miner.height < self.lastblock['height']:
+			logger.info ('Updating mining block')
+			self.miner.updateLastblock (self.lastblock)
+
+		logger.debug ('Height: %d (%s): %r', self.lastblock['height'], self.lastblock['hash'], self.sync)
+
 
 	def shutdown (self):
 		logger.info ('Shutdown completed')
@@ -63,14 +75,30 @@ class Chain:
 
 	# Mine a new block
 	def mine (self, miner):
-		logger.info ('Starting miner...')
-		b = block.BlockMiner (self.lastblock, self.getMempool (), miner)
-		b.mine ()
-		bj = b.toJson ()
-		logger.info ('Mined new block: %s %d', bj['hash'], bj['height'])
-		self.pushBlocks ([bj])
+		while True:
+			if not self.sync:
+				logger.info ('Node not in sync, waiting for mining')
+				time.sleep (15)
+				continue
 
-		# TODO Propagate the fresh mined block without a getBlock
+			logger.info ('Starting miner...')
+			self.miner = block.BlockMiner (self.lastblock, self.getMempool (), miner)
+			self.miner.mine ()
+			bj = self.miner.toJson ()
+			logger.info ('Mined new block: %s %d', bj['hash'], bj['height'])
+			self.pushBlocks ([bj])
+			self.factory.broadcastBlock (bj)
+
+	def setSync (self, sync):
+		self.sync = sync
+
+	def revertFork (self):
+		h = self.getHeight ()
+
+		if h['height'] != 0:
+			self.db.get ('blocks').remove ({'height': h['height']})
+			logger.info ('Removed last block because of a fork')
+			self._updateHeight ()
 
 	def getBlocks (self, last = None, first = None, hash = None, n = 16):
 		#print ('getblocks', last, n)
@@ -93,15 +121,20 @@ class Chain:
 		return { 'blocks': blocks, 'last': lasthash }
 
 	def pushBlocks (self, blocks):
+		self.chainLock.acquire ()
 		for b in blocks:
 			bb = block.Block.fromJson (b)
 
 			if bb.prevhash == self.lastblock['hash'] and bb.height == self.lastblock['height'] + 1:
 				bbjs = bb.toJson ()
 				self.db.get ('blocks').insert_one (bbjs)
-				self.lastblock = bbjs
 
-		self._updateHeight ()
+				# TODO Update the miner balance
+
+				self.lastblock = bbjs
+				self._updateHeight ()
+
+		self.chainLock.release ()
 
 
 	def getMempool (self):

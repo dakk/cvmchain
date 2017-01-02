@@ -24,17 +24,38 @@ observer.start()
 class Factory (protocol.Factory):
 	def __init__ (self, chain):
 		self.chain = chain
+		self.chain.setFactory (self)
 		self.peers = {}
+		self.peerIds = []
+		self.nodeid = str (uuid4 ())
+		self.sync = False
 
 		self.timer = task.LoopingCall (lambda: self.forkLoop ())
-		self.timer.start (1.0)
+		self.timer.start (5.0)		
+
+		self.lastbroadcasted = None
+
+	def broadcastBlock (self, block):
+		if self.lastbroadcasted != None and self.lastbroadcasted['hash'] == block['hash']:
+			return
+
+		self.lastbroadcasted = block
+
+		for p in self.peers:
+			if self.peers[p]['last'] != block['hash'] and self.peers[p]['height'] < block['height']:
+				self.peers[p]['proto'].sendBlock (block)
 
 	def forkLoop (self):
 		commonHeights = {}
-		maxh = (0, None)
+		maxh = (0, 0, None)
 
 		for peer in self.peers:
+			if not self.peers[peer]['connected'] or self.peers[peer]['blocksreceived'] != 0:
+				continue
+
 			last = self.peers [peer]['last']
+			h = self.peers [peer]['height']
+
 			if not last in commonHeights:
 				commonHeights [last] = { 'n': 1, 'peers': [peer] }
 			else:
@@ -42,16 +63,22 @@ class Factory (protocol.Factory):
 				commonHeights [last]['n'] += 1
 
 			if commonHeights [last]['n'] > maxh[0]:
-				maxh = (commonHeights [last]['n'], last)
+				maxh = (commonHeights [last]['n'], h, last)
 
-		#print (commonHeights)
-		#print (maxh)
-		if maxh[0] < 2:
+		if maxh[0] < 1:
+			self.chain.setSync (True)
 			return
 
-		h = self.chain.getHeight ()['hash']
-		if maxh[1] != h:
-			logger.error ('Possible fork detected: %s common for %d peers: %s', maxh[1], maxh[0], str (commonHeights [maxh[1]]['peers']))
+		h = self.chain.getHeight ()
+
+		if maxh[1] == h['height'] and maxh[2] == h['hash']:
+			self.chain.setSync (True)
+		elif maxh[1] > h['height']:
+			self.chain.setSync (False)
+
+		if maxh[2] != h['hash'] and maxh[1] >= h['height']:
+			logger.error ('Possible fork detected: %s %d common for %d peers: %s', maxh[2], maxh[1], maxh[0], str (commonHeights [maxh[2]]['peers']))
+			self.chain.revertFork ()
 
 	def buildProtocol (self, addr):
 		return Proto (self)
