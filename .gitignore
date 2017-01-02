@@ -3,3 +3,4 @@ build/*
 doc/*
 *.egg-info
 *.egg
+tags

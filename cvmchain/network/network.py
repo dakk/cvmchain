@@ -5,10 +5,12 @@
 import sys
 import time
 import logging
+import random
 import coloredlogs
 from uuid import uuid4
 from twisted.python import log
 from twisted.internet import reactor, protocol, task
+from threading import Lock
 from twisted.internet.endpoints import TCP4ServerEndpoint, TCP4ClientEndpoint, connectProtocol
 from .proto import Proto
 from .. import config
@@ -20,63 +22,101 @@ coloredlogs.install (level='DEBUG')
 observer = log.PythonLoggingObserver()
 observer.start()
 
+class PeerList:
+	def __init__ (self):
+		self.__list = {}
+		self.__ids = []
+
+	def add (self, remoteIp, peer):
+		self.__ids.append (peer['nodeid'])
+		self.__list [remoteIp] = peer
+
+	def __getitem__(self, remoteIp):
+		if remoteIp in self.__list:
+			return self.__list [remoteIp]
+		else:
+			return None
+
+	def resetBlocksReceived (self, remoteIp):
+		if remoteIp in self.__list:
+			self.__list [remoteIp]['blocksreceived'] = 0
+
+	def subBlocksReceived (self, remoteIp):
+		if remoteIp in self.__list:
+			self.__list [remoteIp]['blocksreceived'] -= 1
+
+	def updateLastMessage (self, remoteIp, lastmessage):
+		if remoteIp in self.__list:
+			self.__list [remoteIp]['lastmessage'] = lastmessage
+
+	def updateHeight (self, remoteIp, height, last):
+		if remoteIp in self.__list:
+			self.__list [remoteIp]['height'] = height
+			self.__list [remoteIp]['last'] = last
+
+	def disconnect (self, remoteIp):
+		if remoteIp in self.__list:
+			self.__list [remoteIp]['connected'] = False
+			self.__ids.remove (self.__list [remoteIp]['nodeid'])
+
+	def exists (self, nodeid):
+		return nodeid in self.__ids or nodeid in self.__list
+
+	def toList (self, connected=True):
+		return list (filter (lambda v: v['connected'] == connected, list (self.__list.values ())))
+
 
 class Factory (protocol.Factory):
 	def __init__ (self, chain):
 		self.chain = chain
 		self.chain.setFactory (self)
-		self.peers = {}
-		self.peerIds = []
+		self.peers = PeerList ()
 		self.nodeid = str (uuid4 ())
 		self.sync = False
 
-		self.timer = task.LoopingCall (lambda: self.forkLoop ())
-		self.timer.start (5.0)		
+		self.timer = task.LoopingCall (lambda: self.syncLoop ())
+		self.timer.start (1)	
 
-		self.lastbroadcasted = None
 
 	def broadcastBlock (self, block):
-		if self.lastbroadcasted != None and self.lastbroadcasted['hash'] == block['hash']:
-			return
+		for p in self.peers.toList ():
+			if p['last'] != block['hash'] and p['height'] < block['height']:
+				p['proto'].sendBlock (block)
 
-		self.lastbroadcasted = block
 
-		for p in self.peers:
-			if self.peers[p]['last'] != block['hash'] and self.peers[p]['height'] < block['height']:
-				self.peers[p]['proto'].sendBlock (block)
-
-	def forkLoop (self):
+	def syncLoop (self):
 		commonHeights = {}
 		maxh = (0, 0, None)
 
-		for peer in self.peers:
-			if not self.peers[peer]['connected'] or self.peers[peer]['blocksreceived'] != 0:
-				continue
-
-			last = self.peers [peer]['last']
-			h = self.peers [peer]['height']
+		for p in self.peers.toList ():
+			last = p['last']
+			h = p['height']
 
 			if not last in commonHeights:
-				commonHeights [last] = { 'n': 1, 'peers': [peer] }
+				commonHeights [last] = { 'n': 1, 'peers': [p] }
 			else:
-				commonHeights [last]['peers'].append (peer)
+				commonHeights [last]['peers'].append (p)
 				commonHeights [last]['n'] += 1
 
 			if commonHeights [last]['n'] > maxh[0]:
-				maxh = (commonHeights [last]['n'], h, last)
+				maxh = (commonHeights [last]['n'], h, last, commonHeights [last]['peers'])
 
 		if maxh[0] < 1:
-			self.chain.setSync (True)
+			self.chain.sync =True
 			return
 
 		h = self.chain.getHeight ()
 
 		if maxh[1] == h['height'] and maxh[2] == h['hash']:
-			self.chain.setSync (True)
+			self.chain.sync = True
 		elif maxh[1] > h['height']:
-			self.chain.setSync (False)
-
-		if maxh[2] != h['hash'] and maxh[1] >= h['height']:
+			self.chain.sync = False
+			logger.debug ('Synching...')
+			
+			proto = (random.choice (maxh[3]))['proto']
+			proto.sendGetBlocks (last=h['hash'], n=128)
+			
+		if (random.choice (maxh[3]))['blocksreceived'] < -2 and maxh[2] != h['hash'] and maxh[1] >= h['height']:
 			logger.error ('Possible fork detected: %s %d common for %d peers: %s', maxh[2], maxh[1], maxh[0], str (commonHeights [maxh[2]]['peers']))
 			self.chain.revertFork ()
 

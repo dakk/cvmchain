@@ -33,10 +33,6 @@ class Chain:
 			genesisBlock = consensus.genesis[config.CONF['chain']]
 			b = block.Block.fromJson (genesisBlock)
 
-			"""if not b.verify ():
-				logger.critical ('Invalid genesis block, exiting.')
-				sys.exit (0)
-			"""
 			self.db.get ('blocks').insert_one (b.toJson ())
 			logger.info ('Genesis block for %s: %s', config.CONF['chain'], b.hash)
 
@@ -86,11 +82,9 @@ class Chain:
 			self.miner.mine ()
 			bj = self.miner.toJson ()
 			logger.info ('Mined new block: %s %d', bj['hash'], bj['height'])
-			self.pushBlocks ([bj])
-			self.factory.broadcastBlock (bj)
+			if self.pushBlocks ([bj]) > 0:
+				self.factory.broadcastBlock (bj)
 
-	def setSync (self, sync):
-		self.sync = sync
 
 	def revertFork (self):
 		h = self.getHeight ()
@@ -121,6 +115,7 @@ class Chain:
 		return { 'blocks': blocks, 'last': lasthash }
 
 	def pushBlocks (self, blocks):
+		pushed = 0
 		self.chainLock.acquire ()
 		for b in blocks:
 			bb = block.Block.fromJson (b)
@@ -133,9 +128,10 @@ class Chain:
 
 				self.lastblock = bbjs
 				self._updateHeight ()
+				pushed += 1
 
 		self.chainLock.release ()
-
+		return pushed
 
 	def getMempool (self):
 		txs = []
