@@ -34,9 +34,8 @@ class Transaction:
             tx['to'] = data['to']
             tx['from'] = data['from']
             tx['value'] = data['value']
+            tx['time'] = data['time'] # Use height for different hash
         elif data['type'] == 'multisig':
-            pass
-        elif data['type'] == 'vote':
             pass
 
         if not 'hash' in data:
